@@ -8,20 +8,55 @@
 #include "delete.h"
 #include "timer.h"
 #include "everything.h"
+#include <random>
 
 using namespace std;
 
+namespace {
+    mt19937& shuffle_engine() {
+        static mt19937 engine(random_device{}());
+        return engine;
+    }
+}
+
 Game::Game()
+    : first_move{-1, -1}, board{}, icon_button{}, new_button(nullptr),
+      pause_button(nullptr), menu_button(nullptr), chance_button(nullptr),
+      time_button{}, level_texture(nullptr), sub_win_menu(nullptr),
+      sub_lose_menu(nullptr), pause_menu(nullptr), level(1), count_change(0),
+      check_first_move(false), check_delete(false), check_no_delete(false),
+      sound_first_move(nullptr), sound_delete(nullptr), sound_no_delete(nullptr),
+      game_time(nullptr), in_game_time(0)
 {}
 
 Game::~Game()
-{}
+{
+    clear();
+}
+
+void Game::clear()
+{
+    for(auto &row : icon_button)
+        for(auto &button : row) { delete button; button = nullptr; }
+    for(auto &button : time_button) { delete button; button = nullptr; }
+    delete new_button; new_button = nullptr;
+    delete pause_button; pause_button = nullptr;
+    delete menu_button; menu_button = nullptr;
+    delete chance_button; chance_button = nullptr;
+    delete sub_win_menu; sub_win_menu = nullptr;
+    delete sub_lose_menu; sub_lose_menu = nullptr;
+    delete pause_menu; pause_menu = nullptr;
+    delete game_time; game_time = nullptr;
+    SDL_DestroyTexture(level_texture); level_texture = nullptr;
+    Mix_FreeChunk(sound_first_move); sound_first_move = nullptr;
+    Mix_FreeChunk(sound_delete); sound_delete = nullptr;
+    Mix_FreeChunk(sound_no_delete); sound_no_delete = nullptr;
+}
 
 void Game::init(int lv, SDL_Renderer* &render, int cnt)
 {
+    clear();
     level = lv;
-
-    srand(time(NULL));
 
     for(int i = 0; i < GAME_ROW; i++)
     {
@@ -54,7 +89,7 @@ void Game::init(int lv, SDL_Renderer* &render, int cnt)
         }
     }
 
-    random_shuffle(val.begin(), val.end());
+    shuffle(val.begin(), val.end(), shuffle_engine());
 
     int n = val.size();
     for(int i = 0; i < n; i++)
@@ -122,6 +157,9 @@ void Game::init(int lv, SDL_Renderer* &render, int cnt)
 
 void Game::handle(SDL_Event* event, SDL_Renderer* &render)
 {
+    if(event->type != SDL_MOUSEBUTTONDOWN || event->button.button != SDL_BUTTON_LEFT ||
+       event->button.x < 184 || event->button.x >= 1016 ||
+       event->button.y < 140 || event->button.y >= 608) return;
     int x, y;
     x = 1 + (event->button.y - 140) / 52;
     y = 1 + (event->button.x - 184) / 52;
@@ -205,13 +243,15 @@ void Game::update(int xa, int ya, int xb, int yb, SDL_Renderer* &render)
     {
         count_change--;
 
-        stringstream s;
-        s << "data/chance/" << count_change << "-chance.png";
-        chance_button = new Button(CHANCE_RECT, s.str().c_str(), s.str().c_str(), render);
-
-        while(!check_possible())
+        if(count_change >= 0)
         {
-            change();
+            stringstream s;
+            s << "data/chance/" << count_change << "-chance.png";
+            delete chance_button;
+            chance_button = new Button(CHANCE_RECT, s.str().c_str(), s.str().c_str(), render);
+            int attempts = 0;
+            while(!check_possible() && attempts++ < 1000) change();
+            if(!check_possible()) count_change = -1;
         }
     }
 
@@ -232,6 +272,7 @@ void Game::update(int xa, int ya, int xb, int yb, SDL_Renderer* &render)
 
                 SDL_Rect icon_rect = {184 + 52 * (j - 1), 140 + 52 * (i - 1), 52, 52};
 
+                delete icon_button[i][j];
                 icon_button[i][j] = new Button(icon_rect, s.str().c_str(), r.str().c_str(), render);
             }
         }
@@ -567,6 +608,10 @@ bool Game::check_y(int xa, int ya, int xb, int yb)
 
 bool Game::find_way(int xa, int ya, int xb, int yb)
 {
+    if(xa < 1 || xa >= GAME_ROW - 1 || xb < 1 || xb >= GAME_ROW - 1 ||
+       ya < 1 || ya >= GAME_COLUMN - 1 || yb < 1 || yb >= GAME_COLUMN - 1 ||
+       (xa == xb && ya == yb) || board[xa][ya] == 0 || board[xb][yb] == 0)
+        return false;
     bool success = true;
 
     if(board[xa][ya] != board[xb][yb])
@@ -647,7 +692,7 @@ void Game::change()
         }
     }
 
-    random_shuffle(val.begin(), val.end());
+    shuffle(val.begin(), val.end(), shuffle_engine());
 
     int n = val.size();
     for(int i = 0; i < n; i++)
@@ -732,7 +777,7 @@ bool Game::check_lose_main_menu(SDL_Event* e)
 
 int Game::get_time()
 {
-    return 420 - in_game_time;
+    return max(0, 420 - in_game_time);
 }
 
 void Game::game_time_pause()

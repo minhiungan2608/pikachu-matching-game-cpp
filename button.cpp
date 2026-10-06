@@ -8,6 +8,7 @@
 using namespace std;
 
 Button::Button()
+    : button_rect{}, button_texture_up(nullptr), button_texture_down(nullptr)
 {}
 
 Button::Button(SDL_Rect rect, const char* s, const char* r, SDL_Renderer* &render)
@@ -34,35 +35,9 @@ Button::~Button()
 
 bool Button::check_mouse(SDL_Event* e)
 {
-    bool inside = true;
-
-    if(e->type ==  SDL_MOUSEBUTTONDOWN)
-    {
-        int x, y;
-        SDL_GetMouseState(&x, &y);
-
-        if(x < button_rect.x)
-        {
-            inside = false;
-        }
-
-        else if(x > button_rect.x + button_rect.w)
-        {
-            inside = false;
-        }
-
-        else if(y < button_rect.y)
-        {
-            inside = false;
-        }
-
-        else if(y > button_rect.y + button_rect.h)
-        {
-            inside = false;
-        }
-    }
-
-    return inside;
+    return e->type == SDL_MOUSEBUTTONDOWN && e->button.button == SDL_BUTTON_LEFT &&
+           e->button.x >= button_rect.x && e->button.x < button_rect.x + button_rect.w &&
+           e->button.y >= button_rect.y && e->button.y < button_rect.y + button_rect.h;
 }
 
 void Button::render_up(SDL_Renderer* &render)

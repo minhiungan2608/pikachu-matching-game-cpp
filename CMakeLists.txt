@@ -1,0 +1,41 @@
+cmake_minimum_required(VERSION 3.16)
+project(PikachuMatchingGame VERSION 1.0 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+find_package(SDL2 REQUIRED CONFIG)
+find_package(SDL2_image REQUIRED CONFIG)
+find_package(SDL2_mixer REQUIRED CONFIG)
+
+add_library(game_core button.cpp create_window.cpp delete.cpp game.cpp
+    menu.cpp sub_menu.cpp texture_manager.cpp timer.cpp)
+target_include_directories(game_core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(game_core PUBLIC SDL2::SDL2 SDL2_image::SDL2_image SDL2_mixer::SDL2_mixer)
+if(MSVC)
+    target_compile_options(game_core PRIVATE /W4)
+else()
+    target_compile_options(game_core PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+option(ENABLE_SANITIZERS "Enable address and undefined-behavior checks" OFF)
+if(ENABLE_SANITIZERS AND NOT MSVC)
+    target_compile_options(game_core PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(game_core PUBLIC -fsanitize=address,undefined)
+endif()
+
+add_executable(pikachu Pikachu.cpp)
+target_link_libraries(pikachu PRIVATE game_core)
+if(TARGET SDL2::SDL2main)
+    target_link_libraries(pikachu PRIVATE SDL2::SDL2main)
+endif()
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(game_tests tests/game_tests.cpp)
+    target_compile_definitions(game_tests PRIVATE SDL_MAIN_HANDLED)
+    target_link_libraries(game_tests PRIVATE game_core)
+    add_test(NAME game_logic_and_runtime COMMAND game_tests)
+    set_tests_properties(game_logic_and_runtime PROPERTIES
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        ENVIRONMENT "SDL_VIDEODRIVER=dummy;SDL_AUDIODRIVER=dummy")
+endif()

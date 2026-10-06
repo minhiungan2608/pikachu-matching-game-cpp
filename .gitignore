@@ -1,0 +1,27 @@
+# Build and IDE output
+/build*/
+/bin/
+/obj/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.so.*
+*.dylib
+*.a
+*.lib
+*.depend
+*.layout
+CMakeUserPresets.json
+compile_commands.json
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+# Private/local configuration
+.env
+.env.*
+!.env.example
+*.log
+__pycache__/

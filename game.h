@@ -50,6 +50,8 @@ public:
     void game_time_unpause();
 
 private:
+    friend struct GameTestAccess;
+    void clear();
     coordinate first_move;
     int board[GAME_ROW][GAME_COLUMN];
     Button* icon_button[GAME_ROW][GAME_COLUMN];

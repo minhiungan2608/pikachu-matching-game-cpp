@@ -8,12 +8,13 @@
 #include "game.h"
 #include "texture_manager.h"
 #include "everything.h"
+#include <stdexcept>
 
 using namespace std;
 
-SDL_Texture* menu_texture;
-
 Create::Create()
+    : state(12), sub_state(-1), menu(nullptr), game(nullptr),
+      winning_menu(nullptr), counting(-1), soundtrack(nullptr)
 {}
 
 Create::~Create()
@@ -28,11 +29,12 @@ void Create::init(const char* title, int xpos, int ypos, int width, int height, 
         flags = SDL_WINDOW_FULLSCREEN;
     }
 
-    if(SDL_Init(SDL_INIT_EVERYTHING) == 0)
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) == 0)
     {
         cout << "Subsystems Initialised!..." << endl;
 
         win = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
+        if(!win) throw std::runtime_error(SDL_GetError());
 
         if(win)
         {
@@ -40,6 +42,9 @@ void Create::init(const char* title, int xpos, int ypos, int width, int height, 
         }
 
         render = SDL_CreateRenderer(win, -1, 0);
+        if(!render) throw std::runtime_error(SDL_GetError());
+        if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) == 0)
+            throw std::runtime_error(IMG_GetError());
 
         if(render)
         {
@@ -61,17 +66,7 @@ void Create::init(const char* title, int xpos, int ypos, int width, int height, 
 
     else
     {
-        state = 12;
-    }
-
-    if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO ) == 0 )
-    {
-        cout << "Audio And Video Initialised!" << endl;
-    }
-
-    else
-    {
-        state = 12;
+        throw std::runtime_error(SDL_GetError());
     }
 
     if(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == 0)
@@ -79,17 +74,18 @@ void Create::init(const char* title, int xpos, int ypos, int width, int height, 
         cout << "Mixer Initialised!" << endl;
 
         soundtrack = Mix_LoadMUS("data/audio/soundtrack.wav");
+        if(!soundtrack) throw std::runtime_error(Mix_GetError());
     }
 
     else
     {
-        state = 12;
+        throw std::runtime_error(Mix_GetError());
     }
 }
 
 void Create::handle(SDL_Renderer* &render)
 {
-    SDL_Event event;
+    SDL_Event event{};
     SDL_PollEvent(&event);
 
     if(event.type == SDL_QUIT)
@@ -113,6 +109,7 @@ void Create::handle(SDL_Renderer* &render)
             if(game->get_count() == -1)
             {
                 state = 11;
+                return;
             }
 
             if(game->check_new(&event))
@@ -134,6 +131,11 @@ void Create::handle(SDL_Renderer* &render)
             }
 
             game->handle(&event, render);
+            if(game->get_count() < 0)
+            {
+                state = 11;
+                return;
+            }
 
             if(game->check_complete())
             {
@@ -275,9 +277,18 @@ void Create::play_soundtrack()
 
 void Create::clean(SDL_Window* &win, SDL_Renderer* &render)
 {
-    SDL_DestroyTexture(menu_texture);
-    SDL_DestroyWindow(win);
+    Mix_HaltMusic();
+    Mix_HaltChannel(-1);
+    delete game; game = nullptr;
+    delete menu; menu = nullptr;
+    delete winning_menu; winning_menu = nullptr;
+    Mix_FreeMusic(soundtrack); soundtrack = nullptr;
+    Mix_CloseAudio();
+    IMG_Quit();
     SDL_DestroyRenderer(render);
+    render = nullptr;
+    SDL_DestroyWindow(win);
+    win = nullptr;
     SDL_Quit();
     cout << "Game Cleaned!" << endl;
 }

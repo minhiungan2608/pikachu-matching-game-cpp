@@ -32,6 +32,7 @@ public:
     void play_soundtrack();
 
 private:
+    friend struct GameTestAccess;
     int state;
     int sub_state;
     Menu* menu;

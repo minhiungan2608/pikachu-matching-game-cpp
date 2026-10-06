@@ -399,7 +399,7 @@ void Game_Delete::lv7_delete(int arr[][GAME_COLUMN], int xa, int ya, int xb, int
                     arr[xa][i] = arr[xa][i + 1];
                 }
 
-                for(int i = yb; i <= GAME_COLUMN - 1; i++)
+                for(int i = yb; i < GAME_COLUMN - 1; i++)
                 {
                     arr[xb][i] = arr[xb][i + 1];
                 }
@@ -407,12 +407,12 @@ void Game_Delete::lv7_delete(int arr[][GAME_COLUMN], int xa, int ya, int xb, int
 
             else
             {
-                for(int i = yb; i <= GAME_COLUMN - 1; i++)
+                for(int i = yb; i < GAME_COLUMN - 1; i++)
                 {
                     arr[xb][i] = arr[xb][i + 1];
                 }
 
-                for(int i = ya; i <= GAME_COLUMN - 1; i++)
+                for(int i = ya; i < GAME_COLUMN - 1; i++)
                 {
                     arr[xa][i] = arr[xa][i + 1];
                 }
@@ -421,12 +421,12 @@ void Game_Delete::lv7_delete(int arr[][GAME_COLUMN], int xa, int ya, int xb, int
 
         else
         {
-            for(int i = ya; i <= GAME_COLUMN - 1; i++)
+            for(int i = ya; i < GAME_COLUMN - 1; i++)
             {
                 arr[xa][i] = arr[xa][i + 1];
             }
 
-            for(int i = yb; i <= GAME_COLUMN - 1; i++)
+            for(int i = yb; i < GAME_COLUMN - 1; i++)
             {
                 arr[xb][i] = arr[xb][i + 1];
             }
@@ -440,7 +440,7 @@ void Game_Delete::lv7_delete(int arr[][GAME_COLUMN], int xa, int ya, int xb, int
             arr[xa][i] = arr[xa][i - 1];
         }
 
-        for(int i = yb; i <= GAME_COLUMN - 1; i++)
+        for(int i = yb; i < GAME_COLUMN - 1; i++)
         {
             arr[xb][i] = arr[xb][i + 1];
         }
@@ -448,7 +448,7 @@ void Game_Delete::lv7_delete(int arr[][GAME_COLUMN], int xa, int ya, int xb, int
 
     else if(ya >= 9 && yb <= 8)
     {
-        for(int i = ya; i <= GAME_COLUMN - 1; i++)
+        for(int i = ya; i < GAME_COLUMN - 1; i++)
         {
             arr[xa][i] = arr[xa][i + 1];
         }
